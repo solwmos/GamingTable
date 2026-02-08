@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Search } from 'lucide-react';
-import { getBoardGames, searchGames, getCachedGame } from '../services/gameService';
+import { getBoardGames, searchGames, getCachedGame, persistGameData } from '../services/gameService';
 import { PLACE_OPTIONS } from '../constants';
 
 const CreateTableModal = ({
@@ -54,7 +54,11 @@ const CreateTableModal = ({
 
   const firstGameId = tableForm.boardGames[0];
   const firstGame = firstGameId ? (getCachedGame(firstGameId) || BOARD_GAMES.find(g => g.id === firstGameId)) : null;
-  const gameImage = firstGame ? (firstGame.thumbnailUrl || firstGame.imageUrl) : null;
+  const gameImage = firstGame ? (
+    (firstGame.thumbnailUrl && typeof firstGame.thumbnailUrl === 'string' && firstGame.thumbnailUrl.length > 0) ? firstGame.thumbnailUrl :
+    (firstGame.imageUrl && typeof firstGame.imageUrl === 'string' && firstGame.imageUrl.length > 0) ? firstGame.imageUrl :
+    null
+  ) : null;
 
   return (
     <div style={{
@@ -293,6 +297,10 @@ const CreateTableModal = ({
                           ? tableForm.boardGames.filter(g => g !== game.id)
                           : [...tableForm.boardGames, game.id];
                         setTableForm({...tableForm, boardGames: games});
+                        // Persist the game data to survive page refresh
+                        if (!isSelected) {
+                          persistGameData(game);
+                        }
                       }}
                       style={{
                         padding: '0.75rem',

@@ -14,7 +14,13 @@ const GameSessionCard = ({
   const spotsLeft = table.numPlayers - table.participants.length;
   const isCreator = table.creatorId === currentUserId;
   const firstGame = table.boardGames.length > 0 ? (getCachedGame(table.boardGames[0]) || BOARD_GAMES.find(g => g.id === table.boardGames[0])) : null;
-  const gameImage = firstGame ? (firstGame.imageUrl || firstGame.thumbnailUrl) : null;
+  
+  // Get a valid image URL - prefer imageUrl, then thumbnailUrl, fallback to null if neither exists or is invalid
+  const gameImage = firstGame ? (
+    (firstGame.imageUrl && typeof firstGame.imageUrl === 'string' && firstGame.imageUrl.length > 0) ? firstGame.imageUrl :
+    (firstGame.thumbnailUrl && typeof firstGame.thumbnailUrl === 'string' && firstGame.thumbnailUrl.length > 0) ? firstGame.thumbnailUrl :
+    null
+  ) : null;
   const creator = getUserById(table.creatorId);
 
   return (

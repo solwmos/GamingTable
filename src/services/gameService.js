@@ -20,6 +20,9 @@ const GAME_CACHE = new Map();
 const SEARCH_CACHE = new Map();
 const SEARCH_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
+// Persistent storage key for selected games
+const SELECTED_GAMES_STORAGE_KEY = 'selected-games-data';
+
 // Pre-populate cache with fallback games
 FALLBACK_GAMES.forEach(game => {
   GAME_CACHE.set(game.id, game);
@@ -27,6 +30,27 @@ FALLBACK_GAMES.forEach(game => {
     GAME_CACHE.set(game.bggId.toString(), game);
   }
 });
+
+// Load persisted selected games into cache on initialization
+const loadPersistedGames = () => {
+  try {
+    const stored = localStorage.getItem(SELECTED_GAMES_STORAGE_KEY);
+    if (stored) {
+      const games = JSON.parse(stored);
+      games.forEach(game => {
+        GAME_CACHE.set(game.id, game);
+        if (game.bggId) {
+          GAME_CACHE.set(game.bggId.toString(), game);
+        }
+      });
+    }
+  } catch (error) {
+    console.warn('Error loading persisted games:', error);
+  }
+};
+
+// Initialize cache with persisted games
+loadPersistedGames();
 
 // Parse search results XML to get basic game info
 const parseSearchResults = (xmlString) => {
@@ -315,4 +339,31 @@ export const getCachedGame = (id) => {
 
   // Fallback to default games
   return FALLBACK_GAMES.find(g => g.id === id || g.bggId === id || g.bggId === id.toString());
+};
+
+// Save a game to persistent storage to ensure it survives page refresh
+export const persistGameData = (game) => {
+  try {
+    // Get existing persisted games
+    let persistedGames = [];
+    const stored = localStorage.getItem(SELECTED_GAMES_STORAGE_KEY);
+    if (stored) {
+      persistedGames = JSON.parse(stored);
+    }
+    
+    // Check if game already exists
+    const gameExists = persistedGames.some(g => g.id === game.id);
+    if (!gameExists) {
+      persistedGames.push(game);
+      localStorage.setItem(SELECTED_GAMES_STORAGE_KEY, JSON.stringify(persistedGames));
+      
+      // Also add to in-memory cache
+      GAME_CACHE.set(game.id, game);
+      if (game.bggId) {
+        GAME_CACHE.set(game.bggId.toString(), game);
+      }
+    }
+  } catch (error) {
+    console.warn('Error persisting game data:', error);
+  }
 };
